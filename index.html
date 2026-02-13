@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Summage Academy - Web Workshop</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scrollbar-width: none;          /* Firefox */
+      -ms-overflow-style: none;       /* IE / Edge */
+    }
+
+    html::-webkit-scrollbar {
+      display: none;                  /* Chrome / Safari */
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ────────────────────────────────────────
+       Hero / Landing area
+    ──────────────────────────────────────── */
+    header {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem 0 6rem;
+    }
+
+    .hero {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .heading {
+      font-size: clamp(2.8rem, 7vw, 5rem);
+      font-weight: 800;
+      color: #f24b0b;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .tagline {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      color: #06a87c;
+      line-height: 1.25;
+    }
+
+    .subtitle {
+      font-size: clamp(1.05rem, 2.5vw, 1.18rem);
+      font-weight: 500;
+      color: #475569;
+      max-width: 620px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.25rem 2rem;
+      margin-top: 1.5rem;
+      width: 100%;
+    }
+
+    .btn {
+      font-size: 1.125rem;
+      font-weight: 700;
+      padding: 1rem 2.4rem;
+      border-radius: 9999px;
+      min-width: 260px;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      box-shadow: 0 4px 0 #0000000d;
+    }
+
+    .btn-primary {
+      background: #f24b0b;
+      color: white;
+      box-shadow: 0 4px 0 #c23a0a;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 0 #c23a0a;
+    }
+
+    .btn-secondary {
+      background: #06a87c;
+      color: white;
+      box-shadow: 0 4px 0 #058f66;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 0 #058f66;
+    }
+
+    .btn-outline {
+      background: white;
+      color: #f24b0b;
+      border: 3px solid #f24b0b;
+      box-shadow: 0 4px 0 #d1420e;
+    }
+
+    .btn-outline:hover {
+      background: white;
+      border-color: #f24b0b;
+      transform: translateY(-3px);
+      box-shadow: 0 7px 0 #d1420e;
+    }
+
+    /* ────────────────────────────────────────
+       Features / Cards
+    ──────────────────────────────────────── */
+    .features {
+      padding: 8rem 0 10rem;
+      background: #f8fafc;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 1.25rem;
+      padding: 2.25rem 2rem;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 6px 24px rgba(15,23,42,0.04);
+      transition: all 0.28s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.08);
+      border-color: #e2e8f0;
+    }
+
+    .card-icon {
+      font-size: 3.8rem;
+      margin-bottom: 1.4rem;
+      line-height: 1;
+    }
+
+    .card-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-bottom: 0.9rem;
+      color: #0f172a;
+    }
+
+    .card-text {
+      font-size: 1.03rem;
+      color: #64748b;
+    }
+
+    /* ────────────────────────────────────────
+       Footer
+    ──────────────────────────────────────── */
+    footer {
+      padding: 5rem 0 3.5rem;
+      text-align: center;
+      background: #0f172a;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    /* ────────────────────────────────────────
+       Responsive adjustments
+    ──────────────────────────────────────── */
+    @media (max-width: 860px) {
+      header {
+        padding: 5rem 0 6rem;
+      }
+
+      .hero {
+        gap: 2rem;
+      }
+
+      .heading {
+        font-size: 3.4rem;
+      }
+
+      .tagline {
+        font-size: 1.75rem;
+      }
+
+      .subtitle {
+        font-size: 1.12rem;
+      }
+
+      .btn {
+        min-width: 100%;
+        padding: 1.1rem 2rem;
+      }
+
+      .actions {
+        gap: 1rem;
+      }
+
+      .features {
+        padding: 6rem 0 8rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .container {
+        padding: 0 16px;
+      }
+
+      .heading {
+        font-size: 2.8rem;
+      }
+
+      .tagline {
+        font-size: 1.6rem;
+      }
+
+      .card-icon {
+        font-size: 3.4rem;
+      }
+
+      .card {
+        padding: 2rem 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="hero">
+        <h1 class="heading">Web Workshop</h1>
+        <p class="tagline" style="display: none;">Create · Review · Publish</p>
+        <p class="subtitle">
+          Focused workspace for Summage Academy administrators and approved contributors
+        </p>
+
+        <div class="actions">
+          <a href="/construction/" class="btn btn-primary">Publisher Area</a>
+          <a href="/admins/"    class="btn btn-secondary">Admin Area</a>
+          <a href="/articles/"  class="btn btn-outline">Browse Articles</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="features">
+    <div class="container">
+      <div class="grid">
+        <div class="card">
+          <div class="card-icon">✍️</div>
+          <h3 class="card-title">Structured Authoring</h3>
+          <p class="card-text">
+            Clean editor with structure guidance, media support, version history and formatting optimized for educational content.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🔍</div>
+          <h3 class="card-title">Collaborative Review</h3>
+          <p class="card-text">
+            Inline comments, suggestion tracking, approval workflows and notifications — built for efficient editorial cycles.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📚</div>
+          <h3 class="card-title">Central Knowledge Base</h3>
+          <p class="card-text">
+            Searchable, tagged repository of approved materials with categories and responsive reading experience.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>Summage Web Workspace - <span id="current-year"></span></p>
+    </div>
+  </footer>
+
+  <script>
+    // Dynamic year
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>

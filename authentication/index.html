@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login • Summage Academy</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDX73k3QqXr9xu_PKkQBkr9pUNp7zmtrW0",
+      authDomain: "summage-backend.firebaseapp.com",
+      projectId: "summage-backend",
+      storageBucket: "summage-backend.firebasestorage.app",
+      messagingSenderId: "128191434358",
+      appId: "1:128191434358:web:4c9e9f4f9ff4a23db5d957"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("loginForm");
+      const email = document.getElementById("email");
+      const password = document.getElementById("password");
+      const errorEl = document.getElementById("errorMessage");
+      const btn = document.getElementById("submitBtn");
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          const adminRef = doc(db, "admins", user.uid);
+          const snap = await getDoc(adminRef);
+          if (snap.exists()) {
+            window.location.href = "/admins/"; // ← your real path
+          } else {
+            await auth.signOut();
+          }
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const em = email.value.trim();
+        const pw = password.value.trim();
+
+        if (!em || !pw) {
+          errorEl.textContent = "Fill in both fields.";
+          errorEl.style.display = "block";
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Signing in...";
+        errorEl.style.display = "none";
+
+        try {
+          const cred = await signInWithEmailAndPassword(auth, em, pw);
+          const adminRef = doc(db, "admins", cred.user.uid);
+          const snap = await getDoc(adminRef);
+
+          if (snap.exists()) {
+            window.location.href = "/admins/";
+          } else {
+            await auth.signOut();
+            errorEl.textContent = "This account is not registered as admin.";
+            errorEl.style.display = "block";
+          }
+        } catch (err) {
+          let msg = "Login failed. Try again.";
+
+          if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+            msg = "Incorrect email or password.";
+          } else if (err.code === "auth/invalid-email") {
+            msg = "Invalid email format.";
+          } else if (err.code === "auth/too-many-requests") {
+            msg = "Too many attempts. Wait a moment.";
+          }
+
+          errorEl.textContent = msg;
+          errorEl.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Sign In";
+        }
+      });
+    });
+  </script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f9fafb 0%, #f1f5f9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-box {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo img {
+      width: 80px;
+      height: 80px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(242,75,11,0.18);
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: #f24b0b;
+      text-align: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .subtitle {
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.6rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #334155;
+      font-size: 0.95rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.95rem 1.2rem;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #f24b0b;
+      box-shadow: 0 0 0 3px rgba(242,75,11,0.12);
+    }
+
+    button {
+      width: 100%;
+      padding: 1.05rem;
+      background: #f24b0b;
+      color: white;
+      font-weight: 700;
+      font-size: 1.05rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      box-shadow: 0 5px 0 #c23a0a;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 #c23a0a;
+    }
+
+    button:disabled {
+      background: #fca5a5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .error {
+      color: #dc2626;
+      font-size: 0.95rem;
+      margin-top: 1rem;
+      text-align: center;
+      display: none;
+      font-weight: 500;
+    }
+
+    .info {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.92rem;
+      color: #64748b;
+    }
+
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 2rem 1.6rem;
+      }
+      h1 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <div class="logo">
+      <img src="/assets/logo.jpg" alt="Summage Logo">
+    </div>
+
+    <h1>Admin Login</h1>
+    <p class="subtitle">Access the Summage Web Workshop</p>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="email" placeholder="admin@summage.org">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
+      </div>
+
+      <button type="submit" id="submitBtn">Sign In</button>
+
+      <div id="errorMessage" class="error"></div>
+    </form>
+
+    <div class="info">
+      Contact support if you need access or forgot your password.
+    </div>
+  </div>
+
+</body>
+</html>

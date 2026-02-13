@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Summage Workspaces</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, getDocs, Timestamp, addDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    window.firebaseModules = {
+      initializeApp, getAuth, onAuthStateChanged, signOut,
+      getFirestore, doc, getDoc, setDoc, collection, getDocs,
+      Timestamp, addDoc, updateDoc, increment
+    };
+  </script>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg: #f8fafc;
+    --text: #0f172a;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --primary: #f24b0b;
+    --primary-dark: #c23a0a;
+    --muted: #64748b;
+    --muted-light: #94a3b8;
+    --hover: rgba(242, 75, 11, 0.1);
+    --success: #10b981;
+    --danger: #ef4444;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --text: #e2e8f0;
+    --card: #1e293b;
+    --border: #334155;
+    --primary: #fb923c;
+    --primary-dark: #ea580c;
+    --muted: #94a3b8;
+    --muted-light: #cbd5e1;
+    --hover: rgba(251, 146, 60, 0.15);
+    --success: #34d399;
+    --danger: #f87171;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  html {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* IE + Edge legacy */
+  }
+
+  html::-webkit-scrollbar {
+    display: none;                  /* Chrome, Safari, new Edge */
+  }
+
+  /* Hide scrollbar but keep scrolling */
+  body, .sidebar, .scroll-y {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  body::-webkit-scrollbar,
+  .sidebar::-webkit-scrollbar,
+  .scroll-y::-webkit-scrollbar {
+    display: none;
+  }
+
+  #authCheck {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    z-index: 9999;
+  }
+
+  .spinner {
+    width: 64px;
+    height: 64px;
+    border: 6px solid var(--muted);
+    border-top: 6px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1.8rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+
+  .top-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+    padding: 0.9rem 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  }
+
+  .nav-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+  }
+
+  .logo-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-img {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .logo-text {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--primary);
+  }
+
+  .nav-title-mobile {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+    display: none;
+  }
+
+  .nav-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.65rem 1.5rem;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 9999px;
+    box-shadow: 0 4px 0 var(--primary-dark);
+    transition: all 0.22s;
+  }
+
+  .nav-back:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--primary-dark);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    padding: 1.8rem 1.2rem;
+    z-index: 900;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1rem 1.2rem;
+    margin: 0.5rem 0;
+    border-radius: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.22s;
+  }
+
+  .sidebar-item:hover,
+  .sidebar-item.active {
+    background: var(--hover);
+    color: var(--primary);
+  }
+
+  .main-wrapper {
+    margin-left: 0;
+    padding: 90px 16px 120px;
+  }
+
+  .hero {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 2.4rem 2rem;
+    margin: 1.5rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 1rem;
+  }
+
+  .hero p {
+    font-size: 1.18rem;
+    color: var(--muted);
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.4rem;
+    margin: 2rem 0;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 1.8rem 1.4rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: transform 0.18s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .stat-number {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 0.6rem;
+  }
+
+  .stat-label {
+    font-size: 1.05rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .loading {
+    font-size: 1.1rem;
+    color: var(--muted-light);
+    margin: 2.5rem 0;
+    text-align: center;
+  }
+
+  .error {
+    color: var(--danger);
+    font-weight: 500;
+    text-align: center;
+    margin: 2.5rem 0;
+  }
+
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    z-index: 950;
+    padding: 0.7rem 0;
+    box-shadow: 0 -4px 14px rgba(0,0,0,0.1);
+    display: none;
+  }
+
+  .bottom-icons {
+    display: flex;
+    justify-content: space-around;
+    max-width: 460px;
+    margin: 0 auto;
+  }
+
+  .bottom-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    transition: all 0.2s;
+  }
+
+  .bottom-icon i {
+    font-size: 1.4rem;
+  }
+
+  .bottom-icon.active,
+  .bottom-icon:hover {
+    color: var(--primary);
+    background: var(--hover);
+  }
+
+  /* Account Section */
+  .account-info {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 2.2rem;
+    margin: 2rem auto;
+    max-width: 680px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  }
+
+  .account-info h3 {
+    color: var(--primary);
+    margin-bottom: 1.8rem;
+    font-size: 1.6rem;
+  }
+
+  .account-info p {
+    margin: 1.1rem 0;
+    font-size: 1.08rem;
+  }
+
+  /* Analytics / User Table */
+  .user-list-container {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    overflow: hidden;
+    margin: 1.5rem 0 2.5rem;
+  }
+
+  .user-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+
+  .user-table th,
+  .user-table td {
+    padding: 1rem 1.2rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .user-table th {
+    background: var(--bg);
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.86rem;
+    text-transform: uppercase;
+  }
+
+  .user-table tr:hover {
+    background: var(--hover);
+    transition: background 0.18s;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.2rem;
+    margin: 2rem 0;
+  }
+
+  .pagination button {
+    padding: 0.7rem 1.5rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 3px 0 var(--primary-dark);
+    transition: all 0.22s;
+  }
+
+  .pagination button:disabled {
+    background: #cbd5e1;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .pagination button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 0 var(--primary-dark);
+  }
+
+  /* Quiz Creation */
+  .quiz-form-container {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 2.2rem;
+    margin: 1.8rem auto;
+    max-width: 720px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  }
+
+  .quiz-form-container h3 {
+    color: var(--primary);
+    margin-bottom: 1.6rem;
+    font-size: 1.5rem;
+  }
+
+  textarea,
+  input[type="text"] {
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0.6rem 0 1.2rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  textarea:focus,
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--hover);
+  }
+
+  .option-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 1rem;
+    padding: 0.8rem 1rem;
+    background: var(--hover);
+    border-radius: 10px;
+  }
+
+  .option-row input[type="text"] {
+    flex: 1;
+    border: none;
+    background: transparent;
+  }
+
+  .option-row button {
+    color: var(--danger);
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .option-row button:hover {
+    transform: scale(1.15);
+  }
+
+  .quiz-actions {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 1.8rem;
+    flex-wrap: wrap;
+  }
+
+  .theme-btn,
+  .publish-btn {
+    padding: 0.85rem 1.8rem;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.22s;
+    box-shadow: 0 4px 0 var(--primary-dark);
+  }
+
+  .theme-btn,
+  .publish-btn {
+    background: var(--primary);
+    color: white;
+  }
+
+  .theme-btn:hover,
+  .publish-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--primary-dark);
+  }
+
+  .feedback {
+    padding: 1.1rem 1.5rem;
+    border-radius: 10px;
+    margin-top: 1.4rem;
+    font-weight: 500;
+  }
+
+  .feedback.success {
+    background: rgba(16,185,129,0.15);
+    color: var(--success);
+  }
+
+  .feedback.error {
+    background: rgba(239,68,68,0.15);
+    color: var(--danger);
+  }
+
+  .quiz-list-item {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 1.6rem;
+    margin-bottom: 1.4rem;
+    border-left: 5px solid var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .logout-btn {
+    padding: 0.8rem 1.8rem;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 4px 0 #b91c1c;          /* darker red shadow for press effect */
+    transition: all 0.22s ease;
+    margin-top: 1.2rem;
+  }
+
+  .logout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #991b1b;          /* even darker on hover */
+  }
+
+  .logout-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 0 #991b1b;
+  }
+
+  /* Hide desktop content on mobile, show message */
+  @media (max-width: 860px) {
+    .analytics-content-desktop {
+      display: none !important;
+    }
+    .mobile-only-message {
+      display: block !important;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      font-size: 1.1rem;
+      color: var(--muted);
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      margin: 1.5rem;
+      line-height: 1.6;
+    }
+  }
+
+  /* Hide mobile message on desktop */
+  @media (min-width: 861px) {
+    .mobile-only-message {
+      display: none !important;
+    }
+    .analytics-content-desktop {
+      display: block !important;
+    }
+  }
+  /* Responsive */
+  @media (max-width: 860px) {
+    .sidebar { display: none !important; }
+    .main-wrapper { margin-left: 0; padding: 80px 12px 100px; }
+    .bottom-bar { display: block; }
+    .nav-title-mobile { display: block; }
+    .logo-group { display: none; }
+    .hero { margin: 1rem; padding: 1.8rem 1.2rem; }
+    .account-info,
+    .quiz-form-container { padding: 1.6rem; margin: 1.2rem; }
+  }
+
+  @media (min-width: 861px) {
+    .sidebar { display: block !important; }
+    .main-wrapper { margin-left: 240px; padding-top: 90px; }
+    .bottom-bar { display: none !important; }
+  }
+
+  @media (max-width: 520px) {
+    .container, .nav-inner { padding: 0 12px; }
+    .hero h1 { font-size: 2.1rem; }
+    .stat-number { font-size: 2.1rem; }
+    .stat-card { padding: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="authCheck">
+    <div class="spinner"></div>
+    <div style="font-weight:500; color:var(--muted);">Verifying session...</div>
+    <div id="authError" style="display:none; margin-top:2rem; color:var(--danger); text-align:center; max-width:360px;">
+      Authentication is taking too long.<br>Please check your internet connection or refresh the page.
+    </div>
+  </div>
+
+  <nav class="top-nav" id="topNav" style="display:none;">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="logo-group">
+          <img src="/assets/logo.jpg" alt="Logo" class="logo-img">
+          <span class="logo-text">Summage Workspaces</span>
+        </div>
+        <div class="nav-title-mobile">Workspaces</div>
+        <a href="/" class="nav-back"><i class="fas fa-arrow-left"></i> Back to site</a>
+      </div>
+    </div>
+  </nav>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-item active" data-section="overview"><i class="fas fa-home"></i> Overview</div>
+    <div class="sidebar-item" data-section="analytics"><i class="fas fa-chart-line"></i> Analytics</div>
+    <div class="sidebar-item" data-section="utilities"><i class="fas fa-tools"></i> Utilities</div>
+    <div class="sidebar-item" data-section="account"><i class="fas fa-cog"></i> Account & Settings</div>
+  </aside>
+
+  <div class="main-wrapper" id="mainWrapper" style="display:none;">
+
+    <div class="hero">
+      <h1 id="heroTitle">Admin Overview</h1>
+      <p id="heroText">Welcome to the Summage Admin Panel. Monitor key metrics, manage content, users, and system settings.</p>
+    </div>
+
+    <!-- Overview Section -->
+    <div id="overviewSection">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="totalUsers">—</div>
+          <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="newThisWeek">—</div>
+          <div class="stat-label">New This Week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalCoins">—</div>
+          <div class="stat-label">Total Coins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalDiamonds">—</div>
+          <div class="stat-label">Total Diamonds</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="beginnerUsers">—</div>
+          <div class="stat-label">Beginner</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="elementaryUsers">—</div>
+          <div class="stat-label">Elementary</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="intermediateUsers">—</div>
+          <div class="stat-label">Intermediate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="advancedUsers">—</div>
+          <div class="stat-label">Advanced</div>
+        </div>
+      </div>
+      <div id="statsLoading" class="loading">Loading statistics...</div>
+    </div>
+
+    <div id="analyticsSection" style="display:none;">
+
+      <!-- Mobile-only message -->
+      <div class="mobile-only-message">
+        The data is too wide to display properly on mobile.<br>
+        Please use a desktop or larger screen to view the full user list and analytics.
+      </div>
+
+      <!-- Desktop-only content -->
+      <div class="analytics-content-desktop">
+        <div class="user-list-container scroll-y">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th class="id">ID</th>
+                <th class="email">Email</th>
+                <th>Country</th>
+                <th class="date">Created</th>
+                <th class="date">Last Login</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button id="prevPage" disabled>Previous</button>
+          <span id="pageInfo">Page 1 of 1</span>
+          <button id="nextPage" disabled>Next</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Utilities Section -->
+    <div id="utilitiesSection" style="display:none;">
+      <div class="quiz-form-container">
+        <h3>Add New Quiz Question</h3>
+        <textarea id="quizQuestion" rows="3" placeholder="Write your question here..."></textarea>
+
+        <div id="optionsContainer"></div>
+
+        <div class="quiz-actions">
+          <button id="addOptionBtn" class="theme-btn"><i class="fas fa-plus"></i> Add Option</button>
+          <button id="publishQuizBtn" class="publish-btn"><i class="fas fa-paper-plane"></i> Publish Quiz</button>
+        </div>
+
+        <div id="quizFeedback" class="feedback" style="display:none;"></div>
+      </div>
+
+      <div style="max-width:720px; margin:2.5rem auto 1rem;">
+        <h3 style="color:var(--primary); margin-bottom:1.2rem;">Published Quiz Questions</h3>
+        <div id="quizListContent"></div>
+      </div>
+    </div>
+
+    <!-- Account Section -->
+    <div id="accountSection" style="display:none;">
+      <div class="account-info">
+        <h3>Account Information</h3>
+        <p><strong>Logged in as:</strong> <span id="accountEmail">—</span> (<span id="accountRole">—</span>)</p>
+        <p><strong>Account created:</strong> <span id="accountCreated">—</span></p>
+        <p><strong>Preferred theme:</strong> <span id="accountTheme">—</span></p>
+        <p><strong>Earnings:</strong> <span id="accountBalance">0.0000 $</span></p>
+
+        <div class="theme-toggle">
+          <button id="toggleTheme" class="theme-btn">
+            <i class="fas fa-moon"></i> Switch to Dark Mode
+          </button>
+        </div>
+        <button id="logoutBtn" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log Out
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bottom-bar" id="bottomBar" style="display:none;">
+    <div class="bottom-icons">
+      <div class="bottom-icon active" data-section="overview"><i class="fas fa-home"></i><span>Overview</span></div>
+      <div class="bottom-icon" data-section="analytics"><i class="fas fa-chart-line"></i><span>Analytics</span></div>
+      <div class="bottom-icon" data-section="utilities"><i class="fas fa-tools"></i><span>Utilities</span></div>
+      <div class="bottom-icon" data-section="account"><i class="fas fa-cog"></i><span>Settings</span></div>
+    </div>
+  </nav>
+
+  <script type="module">
+    const { initializeApp, getAuth, onAuthStateChanged, signOut, getFirestore, doc, getDoc, setDoc, collection, getDocs, Timestamp, addDoc, updateDoc, increment } = window.firebaseModules;
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDX73k3QqXr9xu_PKkQBkr9pUNp7zmtrW0",
+      authDomain: "summage-backend.firebaseapp.com",
+      projectId: "summage-backend",
+      storageBucket: "summage-backend.firebasestorage.app",
+      messagingSenderId: "128191434358",
+      appId: "1:128191434358:web:4c9e9f4f9ff4a23db5d957"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUserData = null;
+    let allUsers = [];
+    let currentPage = 1;
+    const pageSize = 10;
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    function updateThemeButton(theme) {
+      const btn = document.getElementById('toggleTheme');
+      if (btn) {
+        btn.innerHTML = theme === 'dark'
+          ? '<i class="fas fa-sun"></i> Switch to Light Mode'
+          : '<i class="fas fa-moon"></i> Switch to Dark Mode';
+      }
+    }
+    updateThemeButton(savedTheme);
+
+    document.addEventListener('click', async e => {
+      if (e.target.closest('#toggleTheme')) {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        updateThemeButton(next);
+        if (auth.currentUser) {
+          await setDoc(doc(db, 'users', auth.currentUser.uid), { preferredTheme: next }, { merge: true });
+        }
+      }
+    });
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) return window.location.href = "/authentication/";
+
+      document.getElementById('authCheck').style.display = 'none';
+      document.getElementById('topNav').style.display = 'block';
+      document.getElementById('mainWrapper').style.display = 'block';
+      document.getElementById('bottomBar').style.display = window.innerWidth <= 860 ? 'block' : 'none';
+
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userRef);
+
+        currentUserData = snap.exists() ? snap.data() : { role: 'admin', preferredTheme: savedTheme, createdAt: Timestamp.now(), earnings: 0 };
+
+        const theme = currentUserData.preferredTheme || savedTheme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        updateThemeButton(theme);
+
+        setActive('overview');
+      } catch (err) {
+        console.error("User data error:", err);
+      }
+    });
+
+    // ── Overview Stats ───────────────────────────────────────────────────────
+    async function loadOverviewStats() {
+      document.getElementById('statsLoading').style.display = 'block';
+      try {
+        const snapshot = await getDocs(collection(db, 'users'));
+        allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        document.getElementById('totalUsers').textContent = allUsers.length.toLocaleString();
+
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        startOfWeek.setHours(0,0,0,0);
+
+        const newThisWeek = allUsers.filter(u => u.createdAt && new Date(u.createdAt.seconds * 1000) >= startOfWeek).length;
+        document.getElementById('newThisWeek').textContent = newThisWeek.toLocaleString();
+
+        const totalCoins = allUsers.reduce((sum, u) => sum + (u.coins || 0), 0);
+        const totalDiamonds = allUsers.reduce((sum, u) => sum + (u.diamonds || 0), 0);
+        document.getElementById('totalCoins').textContent = totalCoins.toLocaleString();
+        document.getElementById('totalDiamonds').textContent = totalDiamonds.toLocaleString();
+
+        const levels = { beginner: 0, elementary: 0, intermediate: 0, advanced: 0, ielts: 0 };
+        allUsers.forEach(u => {
+          const level = (u.level || '').toLowerCase();
+          if (levels[level] !== undefined) levels[level]++;
+        });
+
+        document.getElementById('beginnerUsers').textContent = levels.beginner.toLocaleString();
+        document.getElementById('elementaryUsers').textContent = levels.elementary.toLocaleString();
+        document.getElementById('intermediateUsers').textContent = levels.intermediate.toLocaleString();
+        document.getElementById('advancedUsers').textContent = levels.advanced.toLocaleString();
+      } catch (err) {
+        console.error('Stats error:', err);
+      } finally {
+        document.getElementById('statsLoading').style.display = 'none';
+      }
+    }
+
+    // ── Analytics / User List ────────────────────────────────────────────────
+    function renderUserTable() {
+      const tbody = document.getElementById('userTableBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const pageUsers = allUsers.slice(start, end);
+
+      pageUsers.forEach(user => {
+        const created = user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+        const lastLogin = user.lastLogin ? new Date(user.lastLogin.seconds * 1000).toLocaleDateString() : 'Never';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="id">${user.id}</td>
+          <td class="email">${user.email || 'N/A'}</td>
+          <td>${user.country || 'N/A'}</td>
+          <td class="date">${created}</td>
+          <td class="date">${lastLogin}</td>
+          <td>${user.status || 'Active'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const pageInfo = document.getElementById('pageInfo');
+      if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${Math.ceil(allUsers.length / pageSize)}`;
+
+      document.getElementById('prevPage').disabled = currentPage === 1;
+      document.getElementById('nextPage').disabled = end >= allUsers.length;
+    }
+
+    async function loadAnalytics() {
+      if (allUsers.length === 0) {
+        const snapshot = await getDocs(collection(db, 'users'));
+        allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
+      renderUserTable();
+    }
+
+    document.getElementById('prevPage')?.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderUserTable();
+      }
+    });
+
+    document.getElementById('nextPage')?.addEventListener('click', () => {
+      if (currentPage * pageSize < allUsers.length) {
+        currentPage++;
+        renderUserTable();
+      }
+    });
+
+    // ── Quiz Features ────────────────────────────────────────────────────────
+    document.getElementById('addOptionBtn')?.addEventListener('click', () => {
+      const container = document.getElementById('optionsContainer');
+      if (container.children.length >= 4) {
+        showQuizFeedback("Maximum 4 options allowed.", "error");
+        return;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'option-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Enter option text..." required>
+        <label style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
+          <input type="checkbox"> Correct
+        </label>
+        <button type="button"><i class="fas fa-trash"></i></button>
+      `;
+      container.appendChild(row);
+      row.querySelector('button').onclick = () => row.remove();
+    });
+
+    document.getElementById('publishQuizBtn')?.addEventListener('click', async () => {
+      const question = document.getElementById('quizQuestion').value.trim();
+      if (!question) return showQuizFeedback("Please enter a question.", "error");
+
+      const options = [];
+      document.querySelectorAll('.option-row').forEach(r => {
+        const text = r.querySelector('input[type="text"]').value.trim();
+        const correct = r.querySelector('input[type="checkbox"]').checked;
+        if (text) options.push({ text, correct });
+      });
+
+      if (options.length < 2) return showQuizFeedback("At least 2 options required.", "error");
+      if (!options.some(o => o.correct)) return showQuizFeedback("Please mark at least one correct answer.", "error");
+
+      try {
+        await addDoc(collection(db, 'quiz'), {
+          question,
+          options,
+          createdBy: auth.currentUser.uid,
+          createdAt: Timestamp.now()
+        });
+
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+          earnings: increment(0.0002)
+        });
+
+        currentUserData.earnings = (currentUserData.earnings || 0) + 0.0002;
+
+        showQuizFeedback("Quiz published successfully! +$0.0002", "success");
+
+        document.getElementById('quizQuestion').value = '';
+        document.getElementById('optionsContainer').innerHTML = '';
+        loadQuizList();
+      } catch (err) {
+        console.error(err);
+        showQuizFeedback("Failed to publish quiz.", "error");
+      }
+    });
+
+    function showQuizFeedback(msg, type) {
+      const el = document.getElementById('quizFeedback');
+      el.textContent = msg;
+      el.className = `feedback ${type}`;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 6000);
+    }
+
+    async function loadQuizList() {
+      const container = document.getElementById('quizListContent');
+      container.innerHTML = '<div class="loading">Loading quizzes...</div>';
+
+      try {
+        const snap = await getDocs(collection(db, 'quiz'));
+        container.innerHTML = '';
+        if (snap.empty) {
+          container.innerHTML = '<div style="padding:1.8rem; color:var(--muted);">No quizzes published yet.</div>';
+          return;
+        }
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          const item = document.createElement('div');
+          item.className = 'quiz-list-item';
+          item.innerHTML = `
+            <div style="font-weight:600; margin-bottom:0.9rem; font-size:1.1rem;">${data.question}</div>
+            <ul style="list-style:none; padding-left:1.4rem;">
+              ${data.options.map(o => `
+                <li style="margin:0.5rem 0; ${o.correct ? 'color:var(--success); font-weight:600;' : ''}">
+                  ${o.text} ${o.correct ? '✓' : ''}
+                </li>
+              `).join('')}
+            </ul>
+          `;
+          container.appendChild(item);
+        });
+      } catch (err) {
+        container.innerHTML = '<div class="error">Error loading quizzes.</div>';
+      }
+    }
+
+    function updateAccountSection() {
+      if (!auth.currentUser || !currentUserData) return;
+
+      document.getElementById('accountEmail').textContent = auth.currentUser.email || '—';
+      document.getElementById('accountRole').textContent = (currentUserData.role || 'admin').charAt(0).toUpperCase() + (currentUserData.role || 'admin').slice(1);
+      document.getElementById('accountCreated').textContent = currentUserData.createdAt
+        ? new Date(currentUserData.createdAt.seconds * 1000).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : 'Unknown';
+      document.getElementById('accountTheme').textContent = currentUserData.preferredTheme
+        ? currentUserData.preferredTheme.charAt(0).toUpperCase() + currentUserData.preferredTheme.slice(1)
+        : 'Light';
+      document.getElementById('accountBalance').textContent = (currentUserData.earnings || 0).toFixed(4) + ' $';
+    }
+
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        window.location.href = '/authentication/';
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+    });
+
+    // ── Section Switcher ─────────────────────────────────────────────────────
+    function setActive(section) {
+      document.querySelectorAll('.sidebar-item, .bottom-icon').forEach(el => {
+        el.classList.toggle('active', el.dataset.section === section);
+      });
+
+      document.getElementById('heroTitle').textContent = {
+        overview:   'Admin Overview',
+        analytics:  'Analytics & Reports',
+        utilities:  'Admin Utilities',
+        account:    'Account & Settings'
+      }[section];
+
+      document.getElementById('heroText').textContent = {
+        overview:   'Welcome to the Summage Admin Panel. Monitor key metrics, manage content, users, and system settings.',
+        analytics:  'Detailed user activity, content performance, traffic sources, retention, and custom reports.',
+        utilities:  'Moderation tools, quiz management, bulk actions, cache, backups, logs, and maintenance.',
+        account:    'Your personal account information and preferences.'
+      }[section];
+
+      document.getElementById('overviewSection').style.display   = section === 'overview'   ? 'block' : 'none';
+      document.getElementById('analyticsSection').style.display  = section === 'analytics'  ? 'block' : 'none';
+      document.getElementById('utilitiesSection').style.display  = section === 'utilities'  ? 'block' : 'none';
+      document.getElementById('accountSection').style.display    = section === 'account'    ? 'block' : 'none';
+
+      if (section === 'overview')   loadOverviewStats();
+      if (section === 'analytics')  loadAnalytics();
+      if (section === 'utilities')  loadQuizList();
+      if (section === 'account')    updateAccountSection();
+    }
+
+    document.querySelectorAll('.sidebar-item, .bottom-icon').forEach(item => {
+      item.addEventListener('click', () => setActive(item.dataset.section));
+    });
+  </script>
+</body>
+</html>
